@@ -3,5 +3,5 @@
 ## 🧑🏻‍💻 Developers:
 
 - Guilherme A. Fortes
-- Jorge Martins .
+- Jorge Martins 
 - Cauã Araujo
