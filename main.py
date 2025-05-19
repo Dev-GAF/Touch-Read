@@ -107,11 +107,6 @@ def retroceder_bloco():
     print("\n=== Bloco Anterior ===")
     print(bloco_atual)
 
-
-def simular_botao():
-    input("Pressione Enter para avançar para o próximo bloco...")
-    return avancar_bloco()
-
 # Primeira execução
 avancar_bloco()
 
@@ -122,7 +117,7 @@ while True:
     if x == 1:
         retroceder_bloco()
     elif x == 2:
-        if simular_botao() == 0:
+        if avancar_bloco() == 0:
             break
     else:
         print("Opção inválida")
