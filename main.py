@@ -1,39 +1,61 @@
-import blocos.blocos_txt as bloc
-import os
+import time
+from util.util import is_esta, conversao_pinos  # Funções de conversão para Braille
 
-def main():
-    indice = 0
-    print("\n=== Leitura Braille Iniciada ===")
-
-    if not bloc.gerar_bloco_numerico_por_indice(indice):
-        print("Não há conteúdo para exibir.")
-        return
-
+def processar_livro_por_palavra(caminho):
+    """
+    Processa o livro palavra por palavra e converte para Braille.
+    Cada palavra é exibida na tela como um conjunto de pinos Braille.
+    """
     try:
-        while True:
-            print("\nDigite 1 para repetir o bloco, 2 para avançar, 0 para sair.")
-            try:
-                x = int(input("Escolha: "))
-                if x == 1:
-                    bloc.gerar_bloco_numerico_por_indice(indice)
-                elif x == 2:
-                    indice += 1
-                    if not bloc.gerar_bloco_numerico_por_indice(indice):
-                        print("\nFim do livro.")
-                        break
-                elif x == 0:
-                    print("\nSaindo da leitura.")
-                    break
-                else:
-                    print("Opção inválida.")
-            except ValueError:
-                print("Digite um número válido.")
-    finally:
-        try:
-            os.remove("atual.txt")
-            print("\nArquivo 'atual.txt' removido.")
-        except FileNotFoundError:
-            print("\nArquivo 'atual.txt' não encontrado para remover.")
+        with open(caminho, 'r', encoding="utf-8") as f:
+            indice = 0
+            for palavra in f.read().split():
+                print(f"\n=== Processando Palavra {indice}: '{palavra}' ===")
+                # Processar a palavra para Braille
+                numeros_lista = converter_para_pinos(palavra)
+                mostrar_letra_por_letra(numeros_lista)
+
+                indice += 1
+                time.sleep(1)  # Pausar entre as palavras para evitar sobrecarga
+    except Exception as e:
+        print(f"Erro ao processar o livro: {e}")
+
+
+def converter_para_pinos(texto):
+    """
+    Converte uma palavra para o formato de Braille (em pinos).
+    """
+    resultado = []
+    palavra = []
+
+    for c in texto:
+        if is_esta(c):  # Verificar se o caractere é válido para Braille
+            pinos = conversao_pinos(c)
+            palavra.append(pinos)
+        elif c.isspace():  # Espaço entre palavras
+            resultado.extend(palavra)
+            resultado.append([0, 0, 0, 0, 0, 0])  # Espaço representado como zeros
+            palavra = []
+
+    if palavra:
+        resultado.extend(palavra)
+
+    return resultado
+
+
+def mostrar_letra_por_letra(pinos_lista):
+    """
+    Exibe as letras em Braille, letra por letra.
+    """
+    for pinos in pinos_lista:
+        if pinos == [0, 0, 0, 0, 0, 0]:
+            print("0 0 0 0 0 0", end="\r")  # Espaço
+        else:
+            print(" ".join(str(p) for p in pinos), end="\r")  # Mostra os pinos Braille
+        time.sleep(2)  # Intervalo entre as letras
+    print("0 0 0 0 0 0")  # Final do bloco (representando o final do Braille)
+
 
 if __name__ == "__main__":
-    main()
+    # Processar o livro "livro.txt"
+    processar_livro_por_palavra("livro.txt")
