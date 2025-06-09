@@ -1,37 +1,114 @@
 caracteres = {
-    "A": 1,
-    "B": 2,
-    "C": 3,
-    "D": 4,
-    "E": 5,
-    "F": 6,
-    "G": 7,
-    "H": 8,
-    "I": 9,
-    "J": 10,
-    "K": 11,
-    "L": 12,
-    "M": 13,
-    "N": 14,
-    "O": 15,
-    "P": 16,
-    "Q": 17,
-    "R": 18,
-    "S": 19,
-    "T": 20,
-    "U": 21,
-    "V": 22,
-    "W": 23,
-    "X": 24,
-    "Y": 25,
-    "Z": 26
+    "A": [1, 0,
+          0, 0,
+          0, 0],
+
+    "B": [1, 0,
+          1, 0,
+          0, 0],
+
+    "C": [1, 1,
+          0, 0,
+          0, 0],
+
+    "D": [1, 1,
+          0, 1,
+          0, 0],
+
+    "E": [1, 0,
+          0, 1,
+          0, 0],
+
+    "F": [1, 1,
+          1, 0,
+          0, 0],
+
+    "G": [1, 1,
+          1, 1,
+          0, 0],
+
+    "H": [1, 0,
+          1, 1,
+          0, 0],
+
+    "I": [0, 1,
+          1, 0,
+          0, 0],
+
+    "J": [0, 1,
+          1, 1,
+          0, 0],
+
+    "K": [1, 0,
+          0, 0,
+          1, 0],
+
+    "L": [1, 0,
+          1, 0,
+          1, 0],
+
+    "M": [1, 1,
+          0, 0,
+          1, 0],
+
+    "N": [1, 1,
+          0, 1,
+          1, 0],
+
+    "O": [1, 0,
+          0, 1,
+          1, 0],
+
+    "P": [1, 1,
+          1, 0,
+          1, 0],
+
+    "Q": [1, 1,
+          1, 1,
+          1, 0],
+
+    "R": [1, 0,
+          1, 1,
+          1, 0],
+
+    "S": [0, 1,
+          1, 0,
+          1, 0],
+
+    "T": [0, 1,
+          1, 1,
+          1, 0],
+
+    "U": [1, 0,
+          0, 0,
+          1, 1],
+
+    "V": [1, 0,
+          1, 0,
+          1, 1],
+
+    "W": [0, 1,
+          1, 1,
+          0, 1],
+
+    "X": [1, 1,
+          0, 0,
+          1, 1],
+
+    "Y": [1, 1,
+          0, 1,
+          1, 1],
+
+    "Z": [1, 0,
+          0, 1,
+          1, 1]
 }
 
 def is_esta(letra):
     return letra.upper() in caracteres
 
-def conversao_num(letra):
-    return caracteres.get(letra.upper(), 0)
+def conversao_pinos(letra):
+    return caracteres.get(letra.upper(), [0, 0, 0, 0, 0, 0])
 
 # caracteres = {
 #     "A": 1,
@@ -63,19 +140,7 @@ def conversao_num(letra):
 # }
 
 # def is_esta(letra):
+#     return letra.upper() in caracteres
 
-#     carac = letra.upper()
-
-#     if carac not in caracteres:
-#         return False
-#     return True
-
-# def conversao_num(letra): 
-
-#     carac = letra.upper()
-
-#     if is_esta(carac):
-#         return caracteres[carac]
-    
-#     return []
-
+# def conversao_num(letra):
+#     return caracteres.get(letra.upper(), 0)
