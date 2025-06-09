@@ -1,62 +1,45 @@
+import time
 import arquivo.arq as arq
 import mapeamento.map_carac as mp
 
-def extrair_bloco(texto, indice, tamanho_bloco=20):
-    i = 0
-    blocos = []
-
-    while i < len(texto):
-        bloco = ""
-        while i < len(texto):
-            palavra = ""
-            while i < len(texto) and not texto[i].isspace():
-                palavra += texto[i]
-                i += 1
-
-            espaco = ""
-            while i < len(texto) and texto[i].isspace():
-                espaco += texto[i]
-                i += 1
-
-            if len(palavra) > tamanho_bloco:
-                if bloco == "":
-                    bloco = palavra[:tamanho_bloco]
-                    texto = palavra[tamanho_bloco:] + espaco + texto[i:]
-                    i = 0
-                break
-
-            if len(bloco) + len(palavra) + len(espaco) <= tamanho_bloco:
-                bloco += palavra + espaco
-            else:
-                i -= len(palavra + espaco)
-                break
-
-        blocos.append(bloco.strip())
-
-    if indice < 0 or indice >= len(blocos):
-        return None
-
-    return blocos[indice]
-
 def converter_para_pinos(texto):
     resultado = []
+    palavra = []
+
     for c in texto:
         if mp.is_esta(c):
             pinos = mp.conversao_pinos(c)
-            resultado.append("".join(str(p) for p in pinos))  # Junta os 6 pinos em uma string só
-    return " ".join(resultado)
+            palavra.append(pinos)
+        elif c.isspace():
+            resultado.extend(palavra)
+            resultado.append([0, 0, 0, 0, 0, 0])
+            palavra = []
+
+    if palavra:
+        resultado.extend(palavra)
+
+    return resultado
+
+def mostrar_letra_por_letra(pinos_lista):
+    for pinos in pinos_lista:
+        if pinos == [0, 0, 0, 0, 0, 0]:
+            print("0 0 0 0 0 0", end="\r")
+        else:
+            print(" ".join(str(p) for p in pinos), end="\r")
+        time.sleep(2)
+    print("0 0 0 0 0 0")  # final do bloco com zeros (espaço em branco)
 
 def gerar_bloco_numerico_por_indice(indice):
-    texto = arq.ler_texto_completo("livro.txt")
-    bloco = extrair_bloco(texto, indice)
+    bloco = arq.ler_bloco("livro.txt", indice)
 
-    if bloco is None:
+    if bloco is None or bloco.strip() == "":
         return False
 
-    numeros = converter_para_pinos(bloco)
-    arq.salvar_texto("atual.txt", numeros)
+    numeros_lista = converter_para_pinos(bloco)
+    numeros_str = "\n".join("".join(str(p) for p in pinos) for pinos in numeros_lista)
+    arq.salvar_texto("atual.txt", numeros_str)
 
-    print("\n=== Bloco Atual ===")
-    print(numeros)
+    print(f"\n=== Bloco {indice} (Palavra: '{bloco}') ===")
+    mostrar_letra_por_letra(numeros_lista)
 
     return True

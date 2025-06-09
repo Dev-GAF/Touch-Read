@@ -1,6 +1,17 @@
-def ler_texto_completo(caminho):
-    with open(caminho, "r", encoding="utf-8") as f:
-        return f.read()
+def ler_palavras(caminho):
+    try:
+        with open(caminho, "r", encoding="utf-8") as f:
+            texto = f.read()
+            palavras = texto.split()  # separa por espaço padrão
+            return palavras
+    except Exception:
+        return []
+
+def ler_bloco(caminho, indice):
+    palavras = ler_palavras(caminho)
+    if indice < 0 or indice >= len(palavras):
+        return None
+    return palavras[indice]
 
 def salvar_texto(caminho, conteudo):
     with open(caminho, "w", encoding="utf-8") as f:
