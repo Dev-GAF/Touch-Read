@@ -24,4 +24,3 @@ def conversao_pinos(c: str, type: str):
             return mp.caracteres.get(letra)
         
     return [1, 1, 1, 1, 1, 1]
-
