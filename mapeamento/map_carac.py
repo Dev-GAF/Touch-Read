@@ -104,8 +104,6 @@ caracteres = {
           0, 0]
 }
 
-PI = 3.14
-
 numeros = {
     "1": "A",
     "2": "B",
@@ -117,6 +115,12 @@ numeros = {
     "8": "H",
     "9": "I",
     "0": "J"
+}
+
+eli = {
+    "#": [1, 0,
+          1, 0,
+          0, 0],
 }
 
 def is_esta(letra, tipo):
