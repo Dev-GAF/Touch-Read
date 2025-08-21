@@ -16,7 +16,7 @@ def processar_livro_por_palavra(caminho):
                 mostrar_letra_por_letra(numeros_lista)
 
                 indice += 1
-                time.sleep(1)  # Pausar entre as palavras para evitar sobrecarga
+                x = input()  # Pausar entre as palavras para evitar sobrecarga
     except Exception as e:
         print(f"Erro ao processar o livro: {e}")
 
@@ -48,12 +48,12 @@ def mostrar_letra_por_letra(pinos_lista):
     Exibe as letras em Braille, letra por letra.
     """
     for pinos in pinos_lista:
-        if pinos == [0, 0, 0, 0, 0, 0]:
-            print("0 0 0 0 0 0", end="\r")  # Espaço
+        if pinos == [1, 1, 1, 1, 1, 1]:
+            print("1 1 1 1 1 1", end="\r")  # Espaço
         else:
             print(" ".join(str(p) for p in pinos), end="\r")  # Mostra os pinos Braille
-        time.sleep(2)  # Intervalo entre as letras
-    print("0 0 0 0 0 0")  # Final do bloco (representando o final do Braille)
+        time.sleep(0.5)  # Intervalo entre as letras
+    print("1 1 1 1 1 1")  # Final do bloco (representando o final do Braille)
 
 
 if __name__ == "__main__":
