@@ -1,5 +1,5 @@
 import time
-from util.util import is_esta, conversao_pinos  # Funções de conversão para Braille
+import util 
 
 def processar_livro_por_palavra(caminho):
     """
@@ -25,22 +25,28 @@ def converter_para_pinos(texto):
     """
     Converte uma palavra para o formato de Braille (em pinos).
     """
-    resultado = []
-    palavra = []
+    # resultado = []
+    # palavra = []
 
+    # for c in texto:
+    #     if is_esta(c):  # Verificar se o caractere é válido para Braille
+    #         pinos = conversao_pinos(c)
+    #         palavra.append(pinos)
+    #     elif c.isspace():  # Espaço entre palavras
+    #         resultado.extend(palavra)
+    #         resultado.append([0, 0, 0, 0, 0, 0])  # Espaço representado como zeros
+    #         palavra = []
+
+    # if palavra:
+    #     resultado.extend(palavra)
+
+    # return resultado
+    
     for c in texto:
-        if is_esta(c):  # Verificar se o caractere é válido para Braille
-            pinos = conversao_pinos(c)
-            palavra.append(pinos)
-        elif c.isspace():  # Espaço entre palavras
-            resultado.extend(palavra)
-            resultado.append([0, 0, 0, 0, 0, 0])  # Espaço representado como zeros
-            palavra = []
-
-    if palavra:
-        resultado.extend(palavra)
-
-    return resultado
+        if util.is_in_caractere_map(c) or util.is_in_numeros_map(c):
+            return util.conversao_pinos(c)
+    
+    return [1, 1, 1, 1, 1, 1] # Espaço representado como uns
 
 
 def mostrar_letra_por_letra(pinos_lista):
@@ -48,12 +54,13 @@ def mostrar_letra_por_letra(pinos_lista):
     Exibe as letras em Braille, letra por letra.
     """
     for pinos in pinos_lista:
-        if pinos == [0, 0, 0, 0, 0, 0]:
-            print("0 0 0 0 0 0", end="\r")  # Espaço
+        if pinos == [1, 1, 1, 1, 1, 1]:
+            print("1 1 1 1 1 1", end="\r")  # Espaço
         else:
             print(" ".join(str(p) for p in pinos), end="\r")  # Mostra os pinos Braille
         time.sleep(2)  # Intervalo entre as letras
-    print("0 0 0 0 0 0")  # Final do bloco (representando o final do Braille)
+    # print("0 0 0 0 0 0")  # Final do bloco (representando o final do Braille)
+    print("Ponto final :)")
 
 
 if __name__ == "__main__":
