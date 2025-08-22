@@ -1,5 +1,5 @@
 import time
-import util 
+from util.util import is_esta, is_space, conversao_pinos  # Funções de conversão para Braille
 
 def processar_livro_por_palavra(caminho):
     """
@@ -15,6 +15,8 @@ def processar_livro_por_palavra(caminho):
                 numeros_lista = converter_para_pinos(palavra)
                 mostrar_letra_por_letra(numeros_lista)
 
+                x = input()
+                
                 indice += 1
                 time.sleep(1)  # Pausar entre as palavras para evitar sobrecarga
     except Exception as e:
@@ -28,14 +30,14 @@ def converter_para_pinos(texto):
     # resultado = []
     # palavra = []
 
-    # for c in texto:
-    #     if is_esta(c):  # Verificar se o caractere é válido para Braille
-    #         pinos = conversao_pinos(c)
-    #         palavra.append(pinos)
-    #     elif c.isspace():  # Espaço entre palavras
-    #         resultado.extend(palavra)
-    #         resultado.append([0, 0, 0, 0, 0, 0])  # Espaço representado como zeros
-    #         palavra = []
+    for c in texto:
+        if is_space(c):  # Espaço entre palavras
+            resultado.extend(palavra)
+            resultado.append([1, 1, 1, 1, 1, 1])  # Espaço representado como zeros
+            palavra = []
+        elif is_esta(c):  # Verificar se o caractere é válido para Braille
+            pinos = conversao_pinos(c)
+            palavra.append(pinos)
 
     # if palavra:
     #     resultado.extend(palavra)
@@ -58,9 +60,8 @@ def mostrar_letra_por_letra(pinos_lista):
             print("1 1 1 1 1 1", end="\r")  # Espaço
         else:
             print(" ".join(str(p) for p in pinos), end="\r")  # Mostra os pinos Braille
-        time.sleep(2)  # Intervalo entre as letras
-    # print("0 0 0 0 0 0")  # Final do bloco (representando o final do Braille)
-    print("Ponto final :)")
+        time.sleep(0.5)  # Intervalo entre as letras
+    print("1 1 1 1 1 1")  # Final do bloco (representando o final do Braille)
 
 
 if __name__ == "__main__":
