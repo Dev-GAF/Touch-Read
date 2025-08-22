@@ -180,12 +180,8 @@ numeros = {
     "0": "J"
 }
 
-eli = {
-    "#": [1, 0,
+indicador_numeros = {
+    "#": [1, 0,   
           1, 0,
-          0, 0],
+          0, 0]
 }
-
-
-def conversao_pinos(letra):
-    return caracteres.get(letra.upper(), [1, 1, 1, 1, 1, 1])

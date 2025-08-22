@@ -27,8 +27,8 @@ def converter_para_pinos(texto):
     """
     Converte uma palavra para o formato de Braille (em pinos).
     """
-    resultado = []
-    palavra = []
+    # resultado = []
+    # palavra = []
 
     for c in texto:
         if is_space(c):  # Espaço entre palavras
@@ -39,10 +39,16 @@ def converter_para_pinos(texto):
             pinos = conversao_pinos(c)
             palavra.append(pinos)
 
-    if palavra:
-        resultado.extend(palavra)
+    # if palavra:
+    #     resultado.extend(palavra)
 
-    return resultado
+    # return resultado
+    
+    for c in texto:
+        if util.is_in_caractere_map(c) or util.is_in_numeros_map(c):
+            return util.conversao_pinos(c)
+    
+    return [1, 1, 1, 1, 1, 1] # Espaço representado como uns
 
 
 def mostrar_letra_por_letra(pinos_lista):
