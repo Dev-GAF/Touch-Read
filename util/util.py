@@ -1,4 +1,4 @@
-import mapeamento as mp
+from mapeamento import map_carac as mp
 
 def is_esta(c):
     """

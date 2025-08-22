@@ -15,6 +15,8 @@ def processar_livro_por_palavra(caminho):
                 numeros_lista = converter_para_pinos(palavra)
                 mostrar_letra_por_letra(numeros_lista)
 
+                x = input()
+                
                 indice += 1
                 time.sleep(1)  # Pausar entre as palavras para evitar sobrecarga
     except Exception as e:
