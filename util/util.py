@@ -1,26 +1,35 @@
 import mapeamento as mp
 
-def is_esta(c):
+def is_in_caractere_map(carac):
     """
-    Verifica se o caractere é válido para Braille (alfabeto A-Z ou espaço).
+    Verifica se o caractere está presente no alfabeto (A–Z)
     """
-    return c.isalpha() or c.isspace()
+    
+    return carac.upper() in mp.caracteres
 
+def is_in_numeros_map(num):
+    """
+    Verifica se o número está presente nos números de (0–9)
+    """
+    return num in mp.numeros
+    
 
-def conversao_pinos(c: str, type: str):
+def conversao_pinos(x: str):
     """
     Converte um caractere ou número para o formato de pinos Braille.
     O mapeamento é feito com base no alfabeto A-Z; 0-9.
     """
     
-    if type=="caracteres":
-        pinos = mp.caracteres.get(c)
+    if is_in_caractere_map(x):
+        pinos = mp.caracteres.get(x)
         if pinos:
             return pinos
-            
-    if type=="numeros":
-        letra = mp.numeros.get(c)
+    
+    numero = [mp.indicador_numeros.get("#")]
+    if is_in_numeros_map(x):
+        letra = mp.numeros.get(x)
         if letra:
-            return mp.caracteres.get(letra)
+            numero.append(mp.caracteres.get(letra))
+            return numero
         
     return [1, 1, 1, 1, 1, 1]
