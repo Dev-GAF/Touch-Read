@@ -186,8 +186,6 @@ eli = {
           0, 0],
 }
 
-def is_esta(letra, tipo):
-    return letra.upper() in caracteres
 
 def conversao_pinos(letra):
-    return caracteres.get(letra.upper(), [0, 0, 0, 0, 0, 0])
+    return caracteres.get(letra.upper(), [1, 1, 1, 1, 1, 1])
