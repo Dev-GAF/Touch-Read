@@ -185,3 +185,9 @@ indicador_numeros = {
           1, 0,
           0, 0]
 }
+
+def is_esta(letra, tipo):
+    return letra.upper() in caracteres
+
+def conversao_pinos(letra):
+    return caracteres.get(letra.upper(), [0, 0, 0, 0, 0, 0])

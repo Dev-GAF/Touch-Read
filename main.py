@@ -1,37 +1,4 @@
-import time
-from util.util import conversao_pinos
-
-def processar_livro_por_palavra(caminho):
-    """
-    Processa o livro palavra por palavra e converte para Braille.
-    Cada palavra é exibida na tela como um conjunto de pinos Braille.
-    """
-    try:
-        with open(caminho, 'r', encoding="utf-8") as f:
-            indice = 0
-            for palavra in f.read().split():
-                print(f"\n=== Processando Palavra {indice}: '{palavra}' ===")
-                # Processar a palavra para Braille
-                numeros_lista = [conversao_pinos(c) for c in palavra]
-                mostrar_letra_por_letra(numeros_lista)
-
-                indice += 1
-                time.sleep(0.5)  # Pausar entre as palavras para evitar sobrecarga
-    except Exception as e:
-        print(f"Erro ao processar o livro: {e}")
-
-def mostrar_letra_por_letra(pinos_lista):
-    """
-    Exibe as letras em Braille, letra por letra.
-    """
-    for pinos in pinos_lista:
-        if pinos == [1, 1, 1, 1, 1, 1]:
-            print("1 1 1 1 1 1", end="\r")  # Espaço
-        else:
-            print(" ".join(str(p) for p in pinos), end="\r")  # Mostra os pinos Braille
-        time.sleep(0.5)  # Intervalo entre as letras
-    print("1 1 1 1 1 1")  # Final do bloco (representando o final do Braille)
-
+from util.util import processar_livro_por_palavra
 
 if __name__ == "__main__":
     # Processar o livro "livro.txt"
