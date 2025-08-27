@@ -14,7 +14,7 @@ def conversao_pinos(c: str):
     """
     Converte um caractere ou número para o formato de pinos Braille.
     O mapeamento é feito com base no alfabeto A-Z; 0-9.
-    """
+    """ 
     if c.upper() in mp.caracteres:
         return mp.caracteres[c.upper()]
     elif c in mp.numeros:
