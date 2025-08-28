@@ -39,6 +39,8 @@ def processar_livro_por_palavra(caminho):
                 numeros_lista = [conversao_pinos(c) for c in palavra]
                 mostrar_letra_por_letra(numeros_lista)
 
+                verificar_rep_palavra(numeros_lista)
+
                 indice += 1
                 time.sleep(1)  # Pausar entre as palavras para evitar sobrecarga
     except Exception as e:
@@ -83,3 +85,17 @@ def mostrar_letra_por_letra(pinos_lista):
             time.sleep(2)
 
     print()  # Final do bloco
+
+
+def verificar_rep_palavra(palavraBraileana):
+    """
+        Repete a palavra novamente
+    """
+
+    repeticao = input()
+
+    while repeticao == "rep":
+
+        mostrar_letra_por_letra(palavraBraileana)
+
+        repeticao = input()
