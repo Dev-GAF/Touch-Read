@@ -1,1 +1,9 @@
 Abra o terminal e digite os seguintes comandos:
+
+npm install express cors @supabase/supabase-js
+
+node index.js
+
+
+Quando rodar, acesse:
+http://localhost:3000/text
