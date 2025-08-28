@@ -13,19 +13,20 @@ const SUPABASE_URL = "https://hvbvembchrfhrmoasokm.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2YnZlbWJjaHJmaHJtb2Fzb2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMTc4MTUsImV4cCI6MjA3MTg5MzgxNX0.4ADUxmO7hM24CCWDYnYhmptPvI25P9XRgN5H7xg8SGc";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const NOME_TABELA = "Textos";
+const NOME_TABELA_TEXTOS = "Textos";
+const NOME_TABELA_USUARIOS = "Usuarios"; // case sensitive
 
 // 🔹 GET: todos os textos
 app.get("/text", async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from(NOME_TABELA)
-      .select("texto") // apenas a coluna 'texto'
+      .from(NOME_TABELA_TEXTOS)
+      .select("texto")
       .order("id", { ascending: true });
 
     if (error) throw error;
 
-    const textos = data.map(item => item.texto); // array só com textos
+    const textos = data.map(item => item.texto);
     res.json({ status: "ok", textos });
   } catch (err) {
     console.error(err);
@@ -33,8 +34,27 @@ app.get("/text", async (req, res) => {
   }
 });
 
+// 🔹 GET: todos os usuários (mesma lógica de /text)
+app.get("/usuarios", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("Usuarios") // Use exatamente o case correto
+      .select("*")
+      .order("id", { ascending: true });
+
+    if (error) throw error;
+    res.json({ status: "ok", usuarios: data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: "erro", mensagem: "Falha ao buscar usuários" });
+  }
+});
+
+
 // 🔹 Inicia servidor
 app.listen(3000, () => {
   console.log("✅ Servidor rodando em: http://localhost:3000");
-  console.log("👉 Retornando textos da tabela:", NOME_TABELA);
+  console.log("👉 Endpoints disponíveis:");
+  console.log("   - GET  /text");
+  console.log("   - GET  /usuarios");
 });
