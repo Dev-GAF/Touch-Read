@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login Touch Read</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --accent:#6ee7b7;
+      --muted:#94a3b8;
+      --glass: rgba(255,255,255,0.04);
+      --danger:#f87171;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(135deg,#071129 0%, #071b2a 60%);
+      color:#e6eef6;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
+    }
+
+    .container{
+      width:100%;
+      max-width:420px;
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      border-radius:16px;
+      padding:36px 28px;
+      box-shadow: 0 8px 40px rgba(2,6,23,0.7);
+      border:1px solid rgba(255,255,255,0.06);
+      animation: fadeIn 0.8s ease;
+    }
+
+    @keyframes fadeIn {
+      from {opacity:0; transform:translateY(20px);}
+      to {opacity:1; transform:translateY(0);}
+    }
+
+    h1{
+      font-size:24px;
+      margin:0 0 12px;
+      font-weight:600;
+      color:var(--accent);
+    }
+    p.lead{
+      margin:6px 0 22px;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    form{display:grid;gap:18px}
+    label{font-size:14px;color:var(--muted);display:block;margin-bottom:6px;text-align:left}
+
+    input{
+      width:100%;
+      padding:12px 14px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:rgba(255,255,255,0.03);
+      color:inherit;
+      font-size:15px;
+      outline:none;
+      transition:border-color .2s, box-shadow .2s;
+    }
+    input:focus{
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(110,231,183,0.15);
+    }
+
+    button{
+      background:var(--accent);
+      color:#0f1724;
+      border:none;
+      padding:12px;
+      border-radius:10px;
+      font-weight:600;
+      font-size:15px;
+      cursor:pointer;
+      transition:transform .15s, box-shadow .15s;
+    }
+    button:hover{
+      transform:translateY(-1px);
+      box-shadow:0 6px 16px rgba(110,231,183,0.25);
+    }
+    button:active{transform:scale(0.98)}
+
+    .hidden {display:none;}
+    .error {
+      color: var(--danger);
+      font-size:14px;
+      margin-top:-6px;
+      text-align:center;
+    }
+
+    @media (max-width:460px){
+      .container{padding:26px 18px}
+    }
+  </style>
+</head>
+<body>
+  <main class="container" role="main">
+    <div id="welcome">
+      <h1>Touch Read</h1>
+      <p class="lead">Preparando o ambiente...</p>
+    </div>
+
+    <form id="loginForm" class="hidden">
+      <div id="step1">
+        <label for="email">Usuário</label>
+        <input id="email" name="email" type="text" placeholder="Digite seu usuário" required>
+      </div>
+
+      <div id="step2" class="hidden">
+        <label for="password">Senha</label>
+        <input id="password" name="password" type="password" placeholder="••••••••" required>
+      </div>
+
+      <div id="errorMessage" class="error hidden">Usuário ou senha incorretos.</div>
+
+      <button type="submit" id="loginBtn" class="hidden">Entrar</button>
+    </form>
+  </main>
+
+  <script>
+    const welcome = document.getElementById("welcome");
+    const loginForm = document.getElementById("loginForm");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const step1 = document.getElementById("step1");
+    const step2 = document.getElementById("step2");
+    const errorMessage = document.getElementById("errorMessage");
+    const loginBtn = document.getElementById("loginBtn");
+
+    let usuariosAPI = [];
+
+    async function fetchUsuarios() {
+      try {
+        const res = await fetch('https://api-login-ud37.onrender.com/usuarios');
+        const data = await res.json();
+        usuariosAPI = data.usuarios || [];
+      } catch (err) {
+        console.error("Erro ao buscar usuários:", err);
+        errorMessage.textContent = "Não foi possível conectar ao servidor.";
+        errorMessage.classList.remove("hidden");
+      }
+    }
+    fetchUsuarios();
+
+    setTimeout(() => {
+      welcome.classList.add("hidden");
+      loginForm.classList.remove("hidden");
+      emailInput.focus();
+    }, 3000);
+
+    emailInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (emailInput.value.trim() !== "") {
+          step1.classList.add("hidden");
+          step2.classList.remove("hidden");
+          loginBtn.classList.remove("hidden");
+          passwordInput.focus();
+        }
+      }
+    });
+
+    loginForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const usuarioDigitado = emailInput.value.trim();
+      const senhaDigitada = passwordInput.value.trim();
+
+      const usuarioValido = usuariosAPI.find(u => u.usuario === usuarioDigitado && u.senha === senhaDigitada);
+
+      if (usuarioValido) {
+        errorMessage.classList.add("hidden");
+        window.location.href = "Leitor.html";
+      } else {
+        errorMessage.classList.remove("hidden");
+        passwordInput.value = "";
+        step2.classList.add("hidden");
+        loginBtn.classList.add("hidden");
+        step1.classList.remove("hidden");
+        emailInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>
