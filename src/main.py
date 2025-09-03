@@ -1,4 +1,4 @@
-from src.util.util import processar_livro_por_palavra
+from src.braille import processor as pc
 
 if __name__ == "__main__":
-    processar_livro_por_palavra("livro.txt")
+    pc.processar_livro_por_palavra("livro.txt")

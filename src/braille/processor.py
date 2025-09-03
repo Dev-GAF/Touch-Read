@@ -1,5 +1,5 @@
 import time
-from src.mapping import map_carac as mp
+from src.braille import mapping as mp
 
 def is_in_caractere_map(carac):
     """
