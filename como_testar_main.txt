@@ -1,0 +1,18 @@
+Passo a passo:
+
+0°: Certifique-se de estar na raiz do projeto
+
+1°: comand ou windows + j
+
+2°: Digite no cmd: python3 ou python -m venv venv 
+
+3°: Ative o venv pelo cmd: source venv/bin/activate
+
+4°: Instale o modulo 'requests': pip install requests
+
+4°: Rode: python3 ou python -m src.main 
+
+OBS: Caso não rode, tente as intruções para o seu Sistema Operacional (SO)
+
+"Se pensar em desistir, levanta, e vai para a luta." 
+                                    Guilherme
