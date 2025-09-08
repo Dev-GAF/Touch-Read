@@ -8,6 +8,6 @@ Our focus is to enable blind people to read eBooks with our device.
 
 ## 🧑🏻‍💻 Developers:
 
+- Cauã Araujo Bernardes
 - Guilherme A. Fortes
-- Jorge Martins 
-- Cauã Araujo
+- Jorge J. Martins Neto
