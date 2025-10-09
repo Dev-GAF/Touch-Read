@@ -33,8 +33,8 @@ braille_map = {
     "6": [3,5,6], "7": [3,6], "8": [3,4,6], "9": [1,3,5,6], "0": [1,3,6]
 }
 
-signal_number = [3,4,5,6]  # ⠼
-signal_capital = [6]       # ⠠
+signal_number = [1,2]  # ⠼
+signal_capital = [1,2,3,4,5]       # ⠠
 
 # ------------------------------
 # Funções LEDs
@@ -137,7 +137,7 @@ def conecta_wifi():
             time.sleep(0.5)
     print("Conectado! IP:", wlan.ifconfig()[0])
 
-def pega_texto_da_api(livro_id=5, pagina=0):
+def pega_texto_da_api(livro_id=111, pagina=0):
     while True:
         url = f"https://livrostr.onrender.com/livro/{livro_id}"
         if pagina > 0:
@@ -208,4 +208,3 @@ def main():
                     display.start(texto[index])
 
 main()
-
