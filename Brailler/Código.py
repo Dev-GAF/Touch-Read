@@ -1,4 +1,4 @@
-from machine import Pin
+from machine import Pin, PWM
 from time import sleep, ticks_ms, ticks_diff
 import network
 import urequests
@@ -21,20 +21,54 @@ led_pins = {
 # Mapas Braille
 # ------------------------------
 braille_map = {
-    "a": [2,3,4,5,6], "b": [3,4,5,6], "c": [2,3,5,6], "d": [2,3,6], "e": [2,3,4,6],
-    "f": [3,5,6], "g": [3,6], "h": [3,4,6], "i": [1,3,5,6], "j": [1,3,6],
-    "k": [2,4,5,6], "l": [4,5,6], "m": [2,5,6], "n": [2,6], "o": [2,4,6],
-    "p": [5,6], "q": [6], "r": [4,6], "s": [1,5,6], "t": [1,6],
-    "u": [2,4,5], "v": [5], "w": [1,3], "x": [2,5], "y": [2], "z": [2,4],
-    ",": [1,3,4,5,6], ".": [1,3,4], ";": [1,4,5,6], ":": [1,3,4,6], "!": [1,4,6],
-    "?": [1,2,3,4,5], "-": [1,2,4,5],
-    " ": [1,2,3,4,5,6],
-    "1": [2,3,4,5,6], "2": [3,4,5,6], "3": [2,3,5,6], "4": [2,3,6], "5": [2,3,4,6],
-    "6": [3,5,6], "7": [3,6], "8": [3,4,6], "9": [1,3,5,6], "0": [1,3,6]
+    "a": [2, 3, 4, 5, 6],
+    "b": [3, 4, 5, 6],
+    "c": [2, 3, 5, 6],
+    "d": [2, 3, 6],
+    "e": [2, 3, 4, 6],
+    "f": [3, 5, 6],
+    "g": [3, 6],
+    "h": [3, 4, 6],
+    "i": [1, 3, 5, 6],
+    "j": [1, 3, 6],
+    "k": [2, 4, 5, 6],
+    "l": [4, 5, 6],
+    "m": [2, 5, 6],
+    "n": [2, 6],
+    "o": [2, 4, 6],
+    "p": [5, 6],
+    "q": [6],
+    "r": [4, 6],
+    "s": [1, 5, 6],
+    "t": [1, 6],
+    "u": [2, 4, 5],
+    "v": [5],
+    "w": [1, 3],
+    "x": [2, 5],
+    "y": [2],
+    "z": [2, 4],
+    ",": [1, 3, 4, 5, 6],
+    ".": [1, 3, 4],
+    ";": [1, 4, 5, 6],
+    ":": [1, 3, 4, 6],
+    "!": [1, 4, 6],
+    "?": [1, 2, 3, 4, 5],
+    "-": [1, 2, 4, 5],
+    " ": [1, 2, 3, 4, 5, 6],
+    "1": [2, 3, 4, 5, 6],
+    "2": [3, 4, 5, 6],
+    "3": [2, 3, 5, 6],
+    "4": [2, 3, 6],
+    "5": [2, 3, 4, 6],
+    "6": [3, 5, 6],
+    "7": [3, 6],
+    "8": [3, 4, 6],
+    "9": [1, 3, 5, 6],
+    "0": [1, 3, 6]
 }
 
-signal_number = [1,2]  # ⠼
-signal_capital = [1,2,3,4,5]       # ⠠
+signal_number = [1, 2]         # ⠼
+signal_capital = [1, 2, 3, 4, 5]  # ⠠
 
 # ------------------------------
 # Funções LEDs
@@ -68,13 +102,13 @@ def find_prev_space(pos, antepenultimate=False):
     return 0
 
 def find_next_space(pos):
-    for i in range(pos+1, len(texto)):
+    for i in range(pos + 1, len(texto)):
         if texto[i] == " ":
             return i
-    return len(texto)-1
+    return len(texto) - 1
 
 # ------------------------------
-# Função não-bloqueante para mostrar letra
+# Classe de exibição Braille
 # ------------------------------
 class BrailleDisplay:
     def __init__(self):
@@ -89,6 +123,7 @@ class BrailleDisplay:
         self.stage = 0
         self.start_time = ticks_ms()
         print("\nMostrando letra:", ch)
+
         # Definir etapas
         if ch.isdigit():
             self.stages = [signal_number, braille_map[ch]]
@@ -137,27 +172,37 @@ def conecta_wifi():
             time.sleep(0.5)
     print("Conectado! IP:", wlan.ifconfig()[0])
 
+    # Beep de confirmação
+    buzzer = PWM(Pin(13))
+    buzzer.freq(1000)
+    buzzer.duty(512)
+    sleep(0.5)
+    buzzer.duty(0)
+    buzzer.deinit()
+
 def pega_texto_da_api(livro_id=111, pagina=0):
     while True:
         url = f"https://livrostr.onrender.com/livro/{livro_id}"
         if pagina > 0:
             url += f"/{pagina}"
+
         print("Buscando:", url)
         try:
             resp = urequests.get(url)
             data = ujson.loads(resp.text)
             resp.close()
-            
+
             texto_final = ""
             for livro in data.values():
                 for item in livro:
                     texto_final += item.get("Trecho", "") + " "
+
             texto_final = texto_final.strip()
-            
             if texto_final:
                 return texto_final
             else:
                 pagina += 1
+
         except Exception as e:
             print("Erro ao acessar API:", e)
             return "Erro ao acessar API"
@@ -168,9 +213,9 @@ def pega_texto_da_api(livro_id=111, pagina=0):
 def main():
     global texto
     conecta_wifi()
+
     pagina_atual = 0
     texto = pega_texto_da_api(pagina=pagina_atual)
-    
     index = 0
     paused = False
     display = BrailleDisplay()
@@ -207,4 +252,8 @@ def main():
                 if index < len(texto):
                     display.start(texto[index])
 
+# ------------------------------
+# Execução
+# ------------------------------
 main()
+
