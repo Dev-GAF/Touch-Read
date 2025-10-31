@@ -1,3 +1,26 @@
+"""
+Sistema de Exibição Braille com ESP32 em MicroPython
+-----------------------------------------------------
+
+Este programa controla um conjunto de 6 LEDs representando os pontos Braille,
+três botões de navegação e um buzzer de feedback sonoro. Ele se conecta a uma
+rede Wi-Fi, obtém texto de uma API online e o exibe letra por letra no formato
+Braille visual.
+
+Principais recursos:
+- Exibição dinâmica de caracteres em Braille (inclusive acentuação).
+- Indicação de letras maiúsculas e números.
+- Navegação interativa por botões (voltar, pausar/continuar, avançar).
+- Armazenamento e recuperação automática de progresso em arquivo local.
+- Conexão automática à rede Wi-Fi e comunicação com API HTTP.
+- Feedback sonoro com buzzer.
+
+Compatível com MicroPython em ESP32.
+"""
+
+# ----------------------------------------------------------------------
+# Importações de bibliotecas
+# ----------------------------------------------------------------------
 from machine import Pin, PWM
 from time import sleep, ticks_ms, ticks_diff
 import network
@@ -6,9 +29,11 @@ import ujson
 import time
 import os
 
-# ------------------------------
-# Configuração LEDs
-# ------------------------------
+# ----------------------------------------------------------------------
+# Configuração dos LEDs (pinos físicos conectados)
+# ----------------------------------------------------------------------
+# Mapeia os 6 pontos do Braille (1–6) para GPIOs de saída.
+# Cada ponto é representado por um LED ou atuador tátil.
 led_pins = {
     1: Pin(5, Pin.OUT),
     2: Pin(4, Pin.OUT),
@@ -18,9 +43,11 @@ led_pins = {
     6: Pin(18, Pin.OUT)
 }
 
-# ------------------------------
-# Mapas Braille
-# ------------------------------
+# ----------------------------------------------------------------------
+# Mapeamento Braille de caracteres para LEDs
+# ----------------------------------------------------------------------
+# Cada caractere corresponde a uma lista de pontos (1–6) que devem acender.
+# Este mapa pode ser adaptado conforme o layout físico do display Braille.
 braille_map = {
     "a": [2, 3, 4, 5, 6],
     "b": [3, 4, 5, 6],
@@ -82,35 +109,53 @@ braille_map = {
     " ": []
 }
 
-signal_number = [1, 2]         # ⠼
+# Sinais especiais usados antes de números e letras maiúsculas.
+signal_number = [1, 2]            # ⠼
 signal_capital = [1, 2, 3, 4, 5]  # ⠠
 
-# ------------------------------
-# Funções LEDs
-# ------------------------------
+# ----------------------------------------------------------------------
+# Funções utilitárias de LEDs
+# ----------------------------------------------------------------------
 def clear_leds():
+    """Desliga todos os LEDs do display Braille."""
     for pin in led_pins.values():
         pin.value(0)
 
+
 def acende_leds(pinos):
+    """
+    Acende os LEDs correspondentes aos pontos Braille indicados.
+
+    Args:
+        pinos (list[int]): Lista de índices dos LEDs (1–6) a acender.
+    """
     clear_leds()
     for p in pinos:
         led_pins[p].value(1)
     print("LEDs acesos nos pinos:", pinos)
 
-# ------------------------------
-# Botões
-# ------------------------------
-btn_back = Pin(32, Pin.IN, Pin.PULL_UP)
-btn_pause = Pin(33, Pin.IN, Pin.PULL_UP)
-btn_forward = Pin(25, Pin.IN, Pin.PULL_UP)
+# ----------------------------------------------------------------------
+# Configuração dos botões físicos
+# ----------------------------------------------------------------------
+# Cada botão é configurado como entrada com resistor pull-up interno.
+# Valor lido = 1 quando solto, 0 quando pressionado.
+btn_back = Pin(32, Pin.IN, Pin.PULL_UP)     # Botão para voltar
+btn_pause = Pin(33, Pin.IN, Pin.PULL_UP)    # Botão para pausar/retomar
+btn_forward = Pin(25, Pin.IN, Pin.PULL_UP)  # Botão para avançar
 
-# ------------------------------
-# Funções de progresso
-# ------------------------------
+# ----------------------------------------------------------------------
+# Controle de progresso (arquivo local)
+# ----------------------------------------------------------------------
 PROGRESS_FILE = "progresso.txt"
 
 def salvar_progresso(pagina, index):
+    """
+    Salva o progresso atual da leitura em arquivo.
+
+    Args:
+        pagina (int): Número da página atual.
+        index (int): Índice atual do caractere no texto.
+    """
     try:
         with open(PROGRESS_FILE, "w") as f:
             f.write(f"{pagina},{index}")
@@ -118,7 +163,9 @@ def salvar_progresso(pagina, index):
     except Exception as e:
         print("Erro ao salvar progresso:", e)
 
+
 def apagar_progresso():
+    """Remove o arquivo de progresso, se existir."""
     try:
         if PROGRESS_FILE in os.listdir():
             os.remove(PROGRESS_FILE)
@@ -126,7 +173,14 @@ def apagar_progresso():
     except Exception as e:
         print("Erro ao apagar progresso:", e)
 
+
 def carregar_progresso():
+    """
+    Carrega o progresso salvo anteriormente.
+
+    Returns:
+        tuple[int, int]: (pagina, index) ou (0, 0) se não houver progresso.
+    """
     try:
         if PROGRESS_FILE in os.listdir():
             with open(PROGRESS_FILE, "r") as f:
@@ -137,40 +191,58 @@ def carregar_progresso():
                     return pagina, index
     except Exception:
         pass
-    return 0, 0  # início padrão
+    return 0, 0
 
-# ------------------------------
-# Funções auxiliares
-# ------------------------------
+# ----------------------------------------------------------------------
+# Funções auxiliares de navegação no texto
+# ----------------------------------------------------------------------
 def find_prev_space(pos):
+    """Encontra a posição do espaço anterior ao índice dado."""
     spaces = [i for i, c in enumerate(texto[:pos]) if c == " "]
-    if spaces:
-        return spaces[-1]
-    return 0
+    return spaces[-1] if spaces else 0
+
 
 def find_next_space(pos):
+    """Encontra a posição do próximo espaço após o índice dado."""
     for i in range(pos + 1, len(texto)):
         if texto[i] == " ":
             return i
     return len(texto) - 1
 
-# ------------------------------
-# Classe de exibição Braille
-# ------------------------------
+# ----------------------------------------------------------------------
+# Classe principal de controle do display Braille
+# ----------------------------------------------------------------------
 class BrailleDisplay:
+    """
+    Representa o sistema de exibição de caracteres Braille com LEDs.
+
+    Responsável por:
+    - Determinar as etapas de exibição (sinal especial + letra/número).
+    - Gerenciar o tempo de exibição de cada etapa.
+    - Atualizar o display conforme o tempo decorrido.
+    """
+
     def __init__(self):
+        """Inicializa variáveis internas do display."""
         self.letter = ""
         self.stages = []
         self.stage = 0
         self.start_time = 0
-        self.duration = 1000  # 1 segundo por etapa
+        self.duration = 1000  # milissegundos por etapa
 
     def start(self, ch):
+        """
+        Inicia a exibição de um novo caractere Braille.
+
+        Args:
+            ch (str): Caractere a ser exibido.
+        """
         self.letter = ch
         self.stage = 0
         self.start_time = ticks_ms()
         print("\nMostrando letra:", ch)
 
+        # Define as etapas conforme o tipo do caractere
         if ch.isdigit():
             self.stages = [signal_number, braille_map[ch]]
         elif ch.isalpha():
@@ -178,8 +250,6 @@ class BrailleDisplay:
                 self.stages = [signal_capital, braille_map[ch.lower()]]
             else:
                 self.stages = [braille_map[ch]]
-        elif ch == " ":
-            self.stages = [[]]
         elif ch in braille_map:
             self.stages = [braille_map[ch]]
         else:
@@ -189,10 +259,18 @@ class BrailleDisplay:
             acende_leds(self.stages[0])
 
     def update(self):
+        """
+        Atualiza o estado do display conforme o tempo decorrido.
+
+        Returns:
+            bool: True se todas as etapas foram exibidas; False caso contrário.
+        """
         now = ticks_ms()
         if self.stage >= len(self.stages):
             clear_leds()
             return True
+
+        # Verifica se é hora de avançar para a próxima etapa
         if ticks_diff(now, self.start_time) >= self.duration:
             self.stage += 1
             self.start_time = now
@@ -200,13 +278,18 @@ class BrailleDisplay:
                 acende_leds(self.stages[self.stage])
         return False
 
-# ------------------------------
-# Wi-Fi e API
-# ------------------------------
+# ----------------------------------------------------------------------
+# Conexão Wi-Fi e comunicação com API
+# ----------------------------------------------------------------------
 SSID = "J"
 PASSWORD = "12345678"
 
 def conecta_wifi():
+    """
+    Conecta o dispositivo à rede Wi-Fi configurada.
+
+    Após a conexão, emite um beep de confirmação via buzzer (PWM no pino 13).
+    """
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     if not wlan.isconnected():
@@ -224,7 +307,18 @@ def conecta_wifi():
     buzzer.duty(0)
     buzzer.deinit()
 
+
 def pega_texto_da_api(livro_id=6, pagina=0):
+    """
+    Obtém o texto de uma página específica da API de livros.
+
+    Args:
+        livro_id (int): Identificador do livro na API.
+        pagina (int): Número da página (0 para início).
+
+    Returns:
+        str: Texto concatenado dos trechos obtidos ou "Fim" em caso de erro.
+    """
     while True:
         url = f"https://livrostr.onrender.com/livro/{livro_id}"
         if pagina > 0:
@@ -248,6 +342,7 @@ def pega_texto_da_api(livro_id=6, pagina=0):
                 pagina += 1
 
         except Exception:
+            # Emite dois beeps para indicar erro de rede
             buzzer = PWM(Pin(13))
             buzzer.freq(1000)
             for _ in range(2):
@@ -258,10 +353,23 @@ def pega_texto_da_api(livro_id=6, pagina=0):
             buzzer.deinit()
             return "Fim"
 
-# ------------------------------
-# Loop principal
-# ------------------------------
+# ----------------------------------------------------------------------
+# Função principal do sistema
+# ----------------------------------------------------------------------
 def main():
+    """
+    Função principal: controla o fluxo de exibição, botões e progresso.
+
+    Fluxo:
+    1. Conecta ao Wi-Fi.
+    2. Carrega progresso salvo (se existir).
+    3. Busca texto da API e inicia exibição Braille.
+    4. Monitora os botões:
+        - Voltar: retrocede uma palavra ou página.
+        - Pausar: pausa/retoma a exibição.
+        - Avançar: clique simples volta palavra; duplo clique avança.
+    5. Atualiza LEDs e salva progresso continuamente.
+    """
     global texto
     conecta_wifi()
 
@@ -272,6 +380,7 @@ def main():
     paused = False
 
     while True:
+        # ---------------- Botão VOLTAR ----------------
         if not btn_back.value():
             prev_space = find_prev_space(index)
             if prev_space == 0 and pagina_atual > 0:
@@ -284,6 +393,7 @@ def main():
             salvar_progresso(pagina_atual, index)
             sleep(0.3)
 
+        # ---------------- Botão PAUSAR ----------------
         if not btn_pause.value():
             if paused:
                 index = find_prev_space(index) + 1
@@ -291,10 +401,13 @@ def main():
             paused = not paused
             sleep(0.3)
 
+        # ---------------- Botão AVANÇAR ----------------
         if not btn_forward.value():
             sleep(0.2)
             second_click = False
             start_wait = ticks_ms()
+
+            # Detecta duplo clique (400ms de intervalo)
             while ticks_diff(ticks_ms(), start_wait) < 400:
                 if not btn_forward.value():
                     second_click = True
@@ -302,20 +415,23 @@ def main():
                     break
 
             if second_click:
+                # Avança para próxima palavra
                 next_space = find_next_space(index)
                 if next_space < len(texto) - 1:
                     index = next_space + 1
                     display.start(texto[index])
                     salvar_progresso(pagina_atual, index)
                 else:
+                    # Próxima página
                     pagina_atual += 1
                     novo_texto = pega_texto_da_api(pagina=pagina_atual)
                     if novo_texto:
                         texto = novo_texto
                         index = 0
                         display.start(texto[index])
-                        apagar_progresso()  # apaga arquivo ao mudar de trecho
+                        apagar_progresso()
                     else:
+                        # Beep de erro (fim do conteúdo)
                         buzzer = PWM(Pin(13))
                         buzzer.freq(1000)
                         for _ in range(2):
@@ -325,27 +441,394 @@ def main():
                             sleep(0.2)
                         buzzer.deinit()
             else:
+                # Clique simples: retrocede palavra
                 prev_space = find_prev_space(index)
                 index = prev_space
                 display.start(texto[index])
                 salvar_progresso(pagina_atual, index)
             sleep(0.3)
 
+        # ---------------- Atualização de exibição ----------------
         if not paused:
             finished = display.update()
             if finished:
                 index += 1
                 if index >= len(texto):
+                    # Próxima página automaticamente
                     pagina_atual += 1
                     texto = pega_texto_da_api(pagina=pagina_atual)
                     index = 0
-                    apagar_progresso()  # apaga ao mudar de trecho
+                    apagar_progresso()
                 if index < len(texto):
                     display.start(texto[index])
                     salvar_progresso(pagina_atual, index)
 
-# ------------------------------
-# Execução
-# ------------------------------
-main()
+# ----------------------------------------------------------------------
+# Execução principal
+# ----------------------------------------------------------------------
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+# from machine import Pin, PWM
+# from time import sleep, ticks_ms, ticks_diff
+# import network
+# import urequests
+# import ujson
+# import time
+# import os
+
+# # ------------------------------
+# # Configuração LEDs
+# # ------------------------------
+# led_pins = {
+#     1: Pin(5, Pin.OUT),
+#     2: Pin(4, Pin.OUT),
+#     3: Pin(2, Pin.OUT),
+#     4: Pin(19, Pin.OUT),
+#     5: Pin(21, Pin.OUT),
+#     6: Pin(18, Pin.OUT)
+# }
+
+# # ------------------------------
+# # Mapas Braille
+# # ------------------------------
+# braille_map = {
+#     "a": [2, 3, 4, 5, 6],
+#     "b": [3, 4, 5, 6],
+#     "c": [2, 3, 5, 6],
+#     "d": [2, 3, 6],
+#     "e": [2, 3, 4, 6],
+#     "f": [3, 5, 6],
+#     "g": [3, 6],
+#     "h": [3, 4, 6],
+#     "i": [1, 3, 5, 6],
+#     "j": [1, 3, 6],
+#     "k": [2, 4, 5, 6],
+#     "l": [4, 5, 6],
+#     "m": [2, 5, 6],
+#     "n": [2, 6],
+#     "o": [2, 4, 6],
+#     "p": [5, 6],
+#     "q": [6],
+#     "r": [4, 6],
+#     "s": [1, 5, 6],
+#     "t": [1, 6],
+#     "u": [2, 4, 5],
+#     "v": [5],
+#     "w": [1, 3],
+#     "x": [2, 5],
+#     "y": [2],
+#     "z": [2, 4],
+#     "á": [3, 4, 5],
+#     "à": [3, 4, 5],
+#     "â": [3, 4, 5],
+#     "ã": [2, 4, 5],
+#     "é": [2, 3, 4],
+#     "ê": [2, 3, 4],
+#     "í": [1, 3, 5],
+#     "ó": [2, 4],
+#     "ô": [2, 4],
+#     "õ": [2, 4, 5],
+#     "ú": [2, 4, 5],
+#     "ç": [4, 5],
+#     ".": [1, 3, 4],
+#     ",": [1, 3, 4, 5, 6],
+#     ";": [1, 6],
+#     ":": [1, 2, 3, 5],
+#     "?": [1, 3, 4, 5],
+#     "!": [1, 4],
+#     "-": [1, 2, 4, 5],
+#     "(": [1, 4],
+#     ")": [1, 4],
+#     "1": [2, 3, 4, 5, 6],
+#     "2": [3, 4, 5, 6],
+#     "3": [2, 3, 5, 6],
+#     "4": [2, 3, 6],
+#     "5": [2, 3, 4, 6],
+#     "6": [3, 5, 6],
+#     "7": [3, 6],
+#     "8": [3, 4, 6],
+#     "9": [1, 3, 5, 6],
+#     "0": [1, 3, 6],
+#     " ": []
+# }
+
+# signal_number = [1, 2]         # ⠼
+# signal_capital = [1, 2, 3, 4, 5]  # ⠠
+
+# # ------------------------------
+# # Funções LEDs
+# # ------------------------------
+# def clear_leds():
+#     for pin in led_pins.values():
+#         pin.value(0)
+
+# def acende_leds(pinos):
+#     clear_leds()
+#     for p in pinos:
+#         led_pins[p].value(1)
+#     print("LEDs acesos nos pinos:", pinos)
+
+# # ------------------------------
+# # Botões
+# # ------------------------------
+# btn_back = Pin(32, Pin.IN, Pin.PULL_UP)
+# btn_pause = Pin(33, Pin.IN, Pin.PULL_UP)
+# btn_forward = Pin(25, Pin.IN, Pin.PULL_UP)
+
+# # ------------------------------
+# # Funções de progresso
+# # ------------------------------
+# PROGRESS_FILE = "progresso.txt"
+
+# def salvar_progresso(pagina, index):
+#     try:
+#         with open(PROGRESS_FILE, "w") as f:
+#             f.write(f"{pagina},{index}")
+#         print(f"Progresso salvo: página {pagina}, índice {index}")
+#     except Exception as e:
+#         print("Erro ao salvar progresso:", e)
+
+# def apagar_progresso():
+#     try:
+#         if PROGRESS_FILE in os.listdir():
+#             os.remove(PROGRESS_FILE)
+#             print("Arquivo de progresso apagado.")
+#     except Exception as e:
+#         print("Erro ao apagar progresso:", e)
+
+# def carregar_progresso():
+#     try:
+#         if PROGRESS_FILE in os.listdir():
+#             with open(PROGRESS_FILE, "r") as f:
+#                 content = f.read().strip()
+#                 if content:
+#                     pagina, index = map(int, content.split(","))
+#                     print(f"Progresso carregado: página {pagina}, índice {index}")
+#                     return pagina, index
+#     except Exception:
+#         pass
+#     return 0, 0  # início padrão
+
+# # ------------------------------
+# # Funções auxiliares
+# # ------------------------------
+# def find_prev_space(pos):
+#     spaces = [i for i, c in enumerate(texto[:pos]) if c == " "]
+#     if spaces:
+#         return spaces[-1]
+#     return 0
+
+# def find_next_space(pos):
+#     for i in range(pos + 1, len(texto)):
+#         if texto[i] == " ":
+#             return i
+#     return len(texto) - 1
+
+# # ------------------------------
+# # Classe de exibição Braille
+# # ------------------------------
+# class BrailleDisplay:
+#     def __init__(self):
+#         self.letter = ""
+#         self.stages = []
+#         self.stage = 0
+#         self.start_time = 0
+#         self.duration = 1000  # 1 segundo por etapa
+
+#     def start(self, ch):
+#         self.letter = ch
+#         self.stage = 0
+#         self.start_time = ticks_ms()
+#         print("\nMostrando letra:", ch)
+
+#         if ch.isdigit():
+#             self.stages = [signal_number, braille_map[ch]]
+#         elif ch.isalpha():
+#             if ch.isupper():
+#                 self.stages = [signal_capital, braille_map[ch.lower()]]
+#             else:
+#                 self.stages = [braille_map[ch]]
+#         elif ch == " ":
+#             self.stages = [[]]
+#         elif ch in braille_map:
+#             self.stages = [braille_map[ch]]
+#         else:
+#             self.stages = [[]]
+
+#         if self.stages:
+#             acende_leds(self.stages[0])
+
+#     def update(self):
+#         now = ticks_ms()
+#         if self.stage >= len(self.stages):
+#             clear_leds()
+#             return True
+#         if ticks_diff(now, self.start_time) >= self.duration:
+#             self.stage += 1
+#             self.start_time = now
+#             if self.stage < len(self.stages):
+#                 acende_leds(self.stages[self.stage])
+#         return False
+
+# # ------------------------------
+# # Wi-Fi e API
+# # ------------------------------
+# SSID = "J"
+# PASSWORD = "12345678"
+
+# def conecta_wifi():
+#     wlan = network.WLAN(network.STA_IF)
+#     wlan.active(True)
+#     if not wlan.isconnected():
+#         print("Conectando ao Wi-Fi...")
+#         wlan.connect(SSID, PASSWORD)
+#         while not wlan.isconnected():
+#             time.sleep(0.5)
+#     print("Conectado! IP:", wlan.ifconfig()[0])
+
+#     # Beep de confirmação
+#     buzzer = PWM(Pin(13))
+#     buzzer.freq(1000)
+#     buzzer.duty(512)
+#     sleep(0.5)
+#     buzzer.duty(0)
+#     buzzer.deinit()
+
+# def pega_texto_da_api(livro_id=6, pagina=0):
+#     while True:
+#         url = f"https://livrostr.onrender.com/livro/{livro_id}"
+#         if pagina > 0:
+#             url += f"/{pagina}"
+
+#         print("Buscando:", url)
+#         try:
+#             resp = urequests.get(url)
+#             data = ujson.loads(resp.text)
+#             resp.close()
+
+#             texto_final = ""
+#             for livro in data.values():
+#                 for item in livro:
+#                     texto_final += item.get("Trecho", "") + " "
+
+#             texto_final = texto_final.strip()
+#             if texto_final:
+#                 return texto_final
+#             else:
+#                 pagina += 1
+
+#         except Exception:
+#             buzzer = PWM(Pin(13))
+#             buzzer.freq(1000)
+#             for _ in range(2):
+#                 buzzer.duty(512)
+#                 sleep(0.3)
+#                 buzzer.duty(0)
+#                 sleep(0.2)
+#             buzzer.deinit()
+#             return "Fim"
+
+# # ------------------------------
+# # Loop principal
+# # ------------------------------
+# def main():
+#     global texto
+#     conecta_wifi()
+
+#     pagina_atual, index = carregar_progresso()
+#     texto = pega_texto_da_api(pagina=pagina_atual)
+#     display = BrailleDisplay()
+#     display.start(texto[index])
+#     paused = False
+
+#     while True:
+#         if not btn_back.value():
+#             prev_space = find_prev_space(index)
+#             if prev_space == 0 and pagina_atual > 0:
+#                 pagina_atual -= 1
+#                 texto = pega_texto_da_api(pagina=pagina_atual)
+#                 index = len(texto) - 1
+#             else:
+#                 index = prev_space
+#             display.start(texto[index])
+#             salvar_progresso(pagina_atual, index)
+#             sleep(0.3)
+
+#         if not btn_pause.value():
+#             if paused:
+#                 index = find_prev_space(index) + 1
+#                 display.start(texto[index])
+#             paused = not paused
+#             sleep(0.3)
+
+#         if not btn_forward.value():
+#             sleep(0.2)
+#             second_click = False
+#             start_wait = ticks_ms()
+#             while ticks_diff(ticks_ms(), start_wait) < 400:
+#                 if not btn_forward.value():
+#                     second_click = True
+#                     sleep(0.2)
+#                     break
+
+#             if second_click:
+#                 next_space = find_next_space(index)
+#                 if next_space < len(texto) - 1:
+#                     index = next_space + 1
+#                     display.start(texto[index])
+#                     salvar_progresso(pagina_atual, index)
+#                 else:
+#                     pagina_atual += 1
+#                     novo_texto = pega_texto_da_api(pagina=pagina_atual)
+#                     if novo_texto:
+#                         texto = novo_texto
+#                         index = 0
+#                         display.start(texto[index])
+#                         apagar_progresso()  # apaga arquivo ao mudar de trecho
+#                     else:
+#                         buzzer = PWM(Pin(13))
+#                         buzzer.freq(1000)
+#                         for _ in range(2):
+#                             buzzer.duty(512)
+#                             sleep(0.3)
+#                             buzzer.duty(0)
+#                             sleep(0.2)
+#                         buzzer.deinit()
+#             else:
+#                 prev_space = find_prev_space(index)
+#                 index = prev_space
+#                 display.start(texto[index])
+#                 salvar_progresso(pagina_atual, index)
+#             sleep(0.3)
+
+#         if not paused:
+#             finished = display.update()
+#             if finished:
+#                 index += 1
+#                 if index >= len(texto):
+#                     pagina_atual += 1
+#                     texto = pega_texto_da_api(pagina=pagina_atual)
+#                     index = 0
+#                     apagar_progresso()  # apaga ao mudar de trecho
+#                 if index < len(texto):
+#                     display.start(texto[index])
+#                     salvar_progresso(pagina_atual, index)
+
+# # ------------------------------
+# # Execução
+# # ------------------------------
+# main()
 
